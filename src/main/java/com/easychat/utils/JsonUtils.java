@@ -6,16 +6,15 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.easychat.entity.enums.ResponseCodeEnum;
 import com.easychat.exception.BusinessException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
 /**
  * JSON 工具（基于 fastjson）
  */
+@Slf4j
 public class JsonUtils {
-    private static final Logger logger = LoggerFactory.getLogger(JsonUtils.class);
 
     /**
      * WriteMapNullValue：null 字段也输出（否则前端拿不到这个 key，字段可能缺失）
@@ -30,7 +29,7 @@ public class JsonUtils {
         try {
             return JSONObject.parseObject(json, classz);
         } catch (Exception e) {
-            logger.error("convertJson2Obj异常，json:{}", json);
+            log.error("convertJson2Obj异常，json:{}", json);
             throw new BusinessException(ResponseCodeEnum.CODE_601);
         }
     }
@@ -39,7 +38,7 @@ public class JsonUtils {
         try {
             return JSONArray.parseArray(json, classz);
         } catch (Exception e) {
-            logger.error("convertJsonArray2List,json:{}", json, e);
+            log.error("convertJsonArray2List,json:{}", json, e);
             throw new BusinessException(ResponseCodeEnum.CODE_601);
         }
     }

@@ -1,8 +1,7 @@
 package com.easychat.entity.config;
 
 import com.easychat.utils.StringTools;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -14,8 +13,8 @@ import org.springframework.stereotype.Component;
  *   admin.emails   → 超级管理员邮箱列表
  */
 @Component("appConfig")
+@Slf4j
 public class AppConfig {
-    private static final Logger logger = LoggerFactory.getLogger(AppConfig.class);
 
     /**
      * WebSocket 端口（Netty 用，P6 生效）
