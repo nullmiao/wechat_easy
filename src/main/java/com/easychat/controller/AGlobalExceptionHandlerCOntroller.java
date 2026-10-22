@@ -3,8 +3,7 @@ package com.easychat.controller;
 import com.easychat.entity.enums.ResponseCodeEnum;
 import com.easychat.entity.vo.ResponseVO;
 import com.easychat.exception.BusinessException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -24,9 +23,8 @@ import javax.validation.ConstraintViolationException;
  *      返回值会被 Jackson 直接序列化成 JSON 写回响应。
  */
 @RestControllerAdvice
+@Slf4j
 public class AGlobalExceptionHandlerController extends ABaseController {
-
-    private static final Logger logger = LoggerFactory.getLogger(AGlobalExceptionHandlerController.class);
 
     /**
      * 兜底处理所有异常。
@@ -40,7 +38,7 @@ public class AGlobalExceptionHandlerController extends ABaseController {
     public ResponseVO<Object> handleException(Exception e, HttpServletRequest request) {
         // 日志里带上请求地址和完整异常
         // （未预期异常靠堆栈定位；业务异常重写了 fillInStackTrace，日志里只有一行 message）
-        logger.error("请求错误，请求地址{},错误信息:", request.getRequestURL(), e);
+        log.error("请求错误，请求地址{},错误信息:", request.getRequestURL(), e);
 
         // 1) 请求地址不存在（404）
         // 注意：该分支要生效需要配置 spring.mvc.throw-exception-if-no-handler-found=true，
