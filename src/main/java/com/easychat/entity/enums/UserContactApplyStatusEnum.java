@@ -30,6 +30,8 @@ public enum UserContactApplyStatusEnum {
             if (StringTools.isEmpty(status)) {
                 return null;
             }
+
+            ///  使用enums的内部方法valueOf将字符串转换为枚举类型
             return UserContactApplyStatusEnum.valueOf(status.toUpperCase());
         } catch (IllegalArgumentException e) {
             return null;
