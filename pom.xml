@@ -156,6 +156,13 @@
             <version>${redisson.version}</version>
         </dependency>
 
+        <!-- Lombok：@Data / @Slf4j 等注解（编译期生效，不打进运行包） -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
         <!-- Actuator：/api/actuator/health -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
