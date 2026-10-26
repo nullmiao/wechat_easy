@@ -1,0 +1,445 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  ============================================================================
+  UserInfoMapper.xml —— 用户信息表（user_info）的 MyBatis 映射文件
+
+  规则（很重要）：
+  1. 文件位置固定：src/main/resources/com/easychat/mappers/UserInfoMapper.xml
+     必须与接口 com.easychat.mappers.UserInfoMapper 同包同名，MyBatis 才能按约定找到它；
+  2. namespace 必须等于接口全限定名，里面的语句 id 必须与接口方法名一致，
+     否则启动/调用时报 Invalid bound statement (not found)；
+  3. 所有表（9 张）都要各自写一份这样的 XML，8 条通用 CRUD 语句是"每张表各写一遍"，
+     MyBatis 没有 XML 继承，不能抽一个 BaseMapper.xml 让它们共用。
+  ============================================================================
+-->
+<mapper namespace="com.easychat.mappers.UserInfoMapper">
+
+    <!--
+      1) resultMap：把数据库列映射到 PO 字段
+      注意：本表 13 列，全部要写；resultMap 里不要写 onlineType 这种"非表字段"。
+      因为项目没开 mapUnderscoreToCamelCase，user_id -> userId 不会自动映射，必须手写。
+    -->
+    <resultMap id="base_result_map" type="com.easychat.entity.po.UserInfo">
+        <!-- 主键 -->
+        <id column="user_id" property="userId"/>
+        <result column="email" property="email"/>
+        <result column="nick_name" property="nickName"/>
+        <result column="join_type" property="joinType"/>
+        <result column="sex" property="sex"/>
+        <result column="password" property="password"/>
+        <result column="personal_signature" property="personalSignature"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="last_login_time" property="lastLoginTime"/>
+        <result column="area_name" property="areaName"/>
+        <result column="area_code" property="areaCode"/>
+        <result column="last_off_time" property="lastOffTime"/>
+    </resultMap>
+
+    <!--
+      2) 公共列清单：所有 select 都 <include refid="base_column_list"/> 引入，
+         这样加/减字段只改一处。
+    -->
+    <sql id="base_column_list">
+        user_id
+        , email
+        , nick_name
+        , join_type
+        , sex
+        , password
+        , personal_signature
+        , status
+        , create_time
+        , last_login_time
+        , area_name
+        , area_code
+        , last_off_time
+    </sql>
+
+    <!--
+      3) 动态条件片段：只放 "and xxx" 这种追加条件，
+         外层用 <where> 包裹（<where> 会自动去掉开头多出来的 and）。
+         条件来源是 UserInfoQuery 的字段：
+           普通字段    -> 精确等值
+           XxxFuzzy   -> like 模糊
+           XxxStart/End -> 范围
+         字符串要同时判 null 和空串，否则传空串会变成 like '%%' 匹配全表。
+    -->
+    <sql id="query_condition">
+        <if test="query.userId != null and query.userId != ''">
+            and user_id = #{query.userId}
+        </if>
+        <if test="query.userIdFuzzy != null and query.userIdFuzzy != ''">
+            and user_id like concat('%', #{query.userIdFuzzy}, '%')
+        </if>
+
+        <if test="query.email != null and query.email != ''">
+            and email = #{query.email}
+        </if>
+        <if test="query.emailFuzzy != null and query.emailFuzzy != ''">
+            and email like concat('%', #{query.emailFuzzy}, '%')
+        </if>
+
+        <if test="query.nickName != null and query.nickName != ''">
+            and nick_name = #{query.nickName}
+        </if>
+        <if test="query.nickNameFuzzy != null and query.nickNameFuzzy != ''">
+            and nick_name like concat('%', #{query.nickNameFuzzy}, '%')
+        </if>
+
+        <!-- 数值类型只需要判 null（0 是合法值，不能当空处理） -->
+        <if test="query.joinType != null">
+            and join_type = #{query.joinType}
+        </if>
+        <if test="query.sex != null">
+            and sex = #{query.sex}
+        </if>
+
+        <if test="query.password != null and query.password != ''">
+            and password = #{query.password}
+        </if>
+        <if test="query.passwordFuzzy != null and query.passwordFuzzy != ''">
+            and password like concat('%', #{query.passwordFuzzy}, '%')
+        </if>
+
+        <if test="query.personalSignature != null and query.personalSignature != ''">
+            and personal_signature = #{query.personalSignature}
+        </if>
+        <if test="query.personalSignatureFuzzy != null and query.personalSignatureFuzzy != ''">
+            and personal_signature like concat('%', #{query.personalSignatureFuzzy}, '%')
+        </if>
+
+        <if test="query.status != null">
+            and status = #{query.status}
+        </if>
+
+        <!-- 时间：Query 里是 String，配 Start/End 做范围查询 -->
+        <if test="query.createTime != null and query.createTime != ''">
+            and create_time = #{query.createTime}
+        </if>
+        <if test="query.createTimeStart != null and query.createTimeStart != ''">
+            and create_time &gt;= #{query.createTimeStart}
+        </if>
+        <if test="query.createTimeEnd != null and query.createTimeEnd != ''">
+            and create_time &lt;= #{query.createTimeEnd}
+        </if>
+
+        <!-- 时间戳用 Long -->
+        <if test="query.lastLoginTime != null">
+            and last_login_time = #{query.lastLoginTime}
+        </if>
+
+        <if test="query.areaName != null and query.areaName != ''">
+            and area_name = #{query.areaName}
+        </if>
+        <if test="query.areaNameFuzzy != null and query.areaNameFuzzy != ''">
+            and area_name like concat('%', #{query.areaNameFuzzy}, '%')
+        </if>
+
+        <if test="query.areaCode != null and query.areaCode != ''">
+            and area_code = #{query.areaCode}
+        </if>
+        <if test="query.areaCodeFuzzy != null and query.areaCodeFuzzy != ''">
+            and area_code like concat('%', #{query.areaCodeFuzzy}, '%')
+        </if>
+
+        <if test="query.lastOffTime != null">
+            and last_off_time = #{query.lastOffTime}
+        </if>
+    </sql>
+
+    <!--
+      4) selectList：条件查询列表
+         - resultMap 用 base_result_map
+         - order by 用 ${}（字符串拼接！）→ 只能服务端写死，绝不能接前端参数，否则 SQL 注入
+         - 分页 limit 用 #{}（预编译）→ start 是 offset，end 是每页条数
+    -->
+    <select id="selectList" resultMap="base_result_map"
+            parameterType="com.easychat.entity.query.UserInfoQuery">
+        select
+        <include refid="base_column_list"/>
+        from user_info
+        <where>
+            <include refid="query_condition"/>
+        </where>
+        <if test="query.orderBy != null and query.orderBy != ''">
+            order by ${query.orderBy}
+        </if>
+        <if test="query.simplePage != null">
+            limit #{query.simplePage.start},#{query.simplePage.end}
+        </if>
+    </select>
+
+    <!--
+      5) selectCount：与 selectList 完全相同的条件，用于分页第一步
+         注意 resultType 是 Integer（返回条数），不是 resultMap
+    -->
+    <select id="selectCount" resultType="java.lang.Integer"
+            parameterType="com.easychat.entity.query.UserInfoQuery">
+        select count(0)
+        from user_info
+        <where>
+            <include refid="query_condition"/>
+        </where>
+    </select>
+
+    <!--
+      6) insert：单条插入
+         - user_info 主键 user_id 是业务生成的字符串（U + 11 位随机数），不是自增，
+           所以这里不需要 <selectKey>；自增表（chat_message 等）才需要回填主键。
+         - <trim prefix="(" suffix=")" suffixOverrides=",">：拼 (列1, 列2, ...)
+         - <trim prefix="values (" ...>：拼 values (#{...}, ...)
+         - <if test="bean.xxx != null">：为 null 的字段不拼进 SQL，交给数据库默认值
+           （这就是 PO 字段必须用包装类型 Integer/Long/String 的原因）
+    -->
+    <insert id="insert" parameterType="com.easychat.entity.po.UserInfo">
+        insert into user_info
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="bean.userId != null">user_id,</if>
+            <if test="bean.email != null">email,</if>
+            <if test="bean.nickName != null">nick_name,</if>
+            <if test="bean.joinType != null">join_type,</if>
+            <if test="bean.sex != null">sex,</if>
+            <if test="bean.password != null">password,</if>
+            <if test="bean.personalSignature != null">personal_signature,</if>
+            <if test="bean.status != null">status,</if>
+            <if test="bean.createTime != null">create_time,</if>
+            <if test="bean.lastLoginTime != null">last_login_time,</if>
+            <if test="bean.areaName != null">area_name,</if>
+            <if test="bean.areaCode != null">area_code,</if>
+            <if test="bean.lastOffTime != null">last_off_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="bean.userId != null">#{bean.userId},</if>
+            <if test="bean.email != null">#{bean.email},</if>
+            <if test="bean.nickName != null">#{bean.nickName},</if>
+            <if test="bean.joinType != null">#{bean.joinType},</if>
+            <if test="bean.sex != null">#{bean.sex},</if>
+            <if test="bean.password != null">#{bean.password},</if>
+            <if test="bean.personalSignature != null">#{bean.personalSignature},</if>
+            <if test="bean.status != null">#{bean.status},</if>
+            <if test="bean.createTime != null">#{bean.createTime},</if>
+            <if test="bean.lastLoginTime != null">#{bean.lastLoginTime},</if>
+            <if test="bean.areaName != null">#{bean.areaName},</if>
+            <if test="bean.areaCode != null">#{bean.areaCode},</if>
+            <if test="bean.lastOffTime != null">#{bean.lastOffTime},</if>
+        </trim>
+    </insert>
+
+    <!--
+      7) insertOrUpdate：插入，遇到唯一键冲突（主键 user_id 或唯一键 email）则更新
+         原理：MySQL 的 INSERT ... ON DUPLICATE KEY UPDATE
+         注意：on duplicate 部分不更新主键 user_id（主键不该被改）。
+    -->
+    <insert id="insertOrUpdate" parameterType="com.easychat.entity.po.UserInfo">
+        insert into user_info
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="bean.userId != null">user_id,</if>
+            <if test="bean.email != null">email,</if>
+            <if test="bean.nickName != null">nick_name,</if>
+            <if test="bean.joinType != null">join_type,</if>
+            <if test="bean.sex != null">sex,</if>
+            <if test="bean.password != null">password,</if>
+            <if test="bean.personalSignature != null">personal_signature,</if>
+            <if test="bean.status != null">status,</if>
+            <if test="bean.createTime != null">create_time,</if>
+            <if test="bean.lastLoginTime != null">last_login_time,</if>
+            <if test="bean.areaName != null">area_name,</if>
+            <if test="bean.areaCode != null">area_code,</if>
+            <if test="bean.lastOffTime != null">last_off_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="bean.userId != null">#{bean.userId},</if>
+            <if test="bean.email != null">#{bean.email},</if>
+            <if test="bean.nickName != null">#{bean.nickName},</if>
+            <if test="bean.joinType != null">#{bean.joinType},</if>
+            <if test="bean.sex != null">#{bean.sex},</if>
+            <if test="bean.password != null">#{bean.password},</if>
+            <if test="bean.personalSignature != null">#{bean.personalSignature},</if>
+            <if test="bean.status != null">#{bean.status},</if>
+            <if test="bean.createTime != null">#{bean.createTime},</if>
+            <if test="bean.lastLoginTime != null">#{bean.lastLoginTime},</if>
+            <if test="bean.areaName != null">#{bean.areaName},</if>
+            <if test="bean.areaCode != null">#{bean.areaCode},</if>
+            <if test="bean.lastOffTime != null">#{bean.lastOffTime},</if>
+        </trim>
+        on duplicate key update
+        <trim suffixOverrides=",">
+            <if test="bean.email != null">email = values(email),</if>
+            <if test="bean.nickName != null">nick_name = values(nick_name),</if>
+            <if test="bean.joinType != null">join_type = values(join_type),</if>
+            <if test="bean.sex != null">sex = values(sex),</if>
+            <if test="bean.password != null">password = values(password),</if>
+            <if test="bean.personalSignature != null">personal_signature = values(personal_signature),</if>
+            <if test="bean.status != null">status = values(status),</if>
+            <if test="bean.createTime != null">create_time = values(create_time),</if>
+            <if test="bean.lastLoginTime != null">last_login_time = values(last_login_time),</if>
+            <if test="bean.areaName != null">area_name = values(area_name),</if>
+            <if test="bean.areaCode != null">area_code = values(area_code),</if>
+            <if test="bean.lastOffTime != null">last_off_time = values(last_off_time),</if>
+        </trim>
+    </insert>
+
+    <!--
+      8) insertBatch：批量插入
+         - 参数是 List，用 <foreach collection="list"> 循环拼 values
+         - user_info 主键不是自增，不需要 useGeneratedKeys
+         - 自增表（chat_message/app_update/user_contact_apply）要加
+           useGeneratedKeys="true" keyProperty="messageId" 让主键回填
+    -->
+    <insert id="insertBatch" parameterType="java.util.List">
+        insert into user_info
+        (user_id, email, nick_name, join_type, sex, password, personal_signature,
+        status, create_time, last_login_time, area_name, area_code, last_off_time)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.userId}, #{item.email}, #{item.nickName}, #{item.joinType}, #{item.sex},
+            #{item.password}, #{item.personalSignature}, #{item.status}, #{item.createTime},
+            #{item.lastLoginTime}, #{item.areaName}, #{item.areaCode}, #{item.lastOffTime})
+        </foreach>
+    </insert>
+
+    <!--
+      9) insertOrUpdateBatch：批量插入或更新
+         批量场景下唯一键冲突时走 ON DUPLICATE KEY UPDATE；
+         列清单固定写全，避免动态 <if> 在批量里变复杂。
+    -->
+    <insert id="insertOrUpdateBatch" parameterType="java.util.List">
+        insert into user_info
+        (user_id, email, nick_name, join_type, sex, password, personal_signature,
+        status, create_time, last_login_time, area_name, area_code, last_off_time)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.userId}, #{item.email}, #{item.nickName}, #{item.joinType}, #{item.sex},
+            #{item.password}, #{item.personalSignature}, #{item.status}, #{item.createTime},
+            #{item.lastLoginTime}, #{item.areaName}, #{item.areaCode}, #{item.lastOffTime})
+        </foreach>
+        on duplicate key update
+        email = values(email),
+        nick_name = values(nick_name),
+        join_type = values(join_type),
+        sex = values(sex),
+        password = values(password),
+        personal_signature = values(personal_signature),
+        status = values(status),
+        create_time = values(create_time),
+        last_login_time = values(last_login_time),
+        area_name = values(area_name),
+        area_code = values(area_code),
+        last_off_time = values(last_off_time)
+    </insert>
+
+    <!--
+      10) updateByParam：按 Query 条件更新
+          - 更新值来自 bean（@Param("bean")），条件来自 query（@Param("query")）
+          - <set> 会自动去掉末尾多余的逗号
+          - 条件复用 query_condition，和 selectList 保持同一套语义
+          - ⚠️ 如果 query 里一个条件都没有，会变成 update 全表！
+            所以 Service 层调用前必须用 StringTools.checkParam(query) 校验（P4 会用到）
+    -->
+    <update id="updateByParam" parameterType="com.easychat.entity.query.UserInfoQuery">
+        update user_info
+        <set>
+            <if test="bean.email != null">email = #{bean.email},</if>
+            <if test="bean.nickName != null">nick_name = #{bean.nickName},</if>
+            <if test="bean.joinType != null">join_type = #{bean.joinType},</if>
+            <if test="bean.sex != null">sex = #{bean.sex},</if>
+            <if test="bean.password != null">password = #{bean.password},</if>
+            <if test="bean.personalSignature != null">personal_signature = #{bean.personalSignature},</if>
+            <if test="bean.status != null">status = #{bean.status},</if>
+            <if test="bean.createTime != null">create_time = #{bean.createTime},</if>
+            <if test="bean.lastLoginTime != null">last_login_time = #{bean.lastLoginTime},</if>
+            <if test="bean.areaName != null">area_name = #{bean.areaName},</if>
+            <if test="bean.areaCode != null">area_code = #{bean.areaCode},</if>
+            <if test="bean.lastOffTime != null">last_off_time = #{bean.lastOffTime},</if>
+        </set>
+        <where>
+            <include refid="query_condition"/>
+        </where>
+    </update>
+
+    <!--
+      11) deleteByParam：按 Query 条件删除
+          ⚠️ 同样：query 为空会删全表，Service 层必须先校验条件
+    -->
+    <delete id="deleteByParam" parameterType="com.easychat.entity.query.UserInfoQuery">
+        delete from user_info
+        <where>
+            <include refid="query_condition"/>
+        </where>
+    </delete>
+
+    <!--
+      12) 以下 6 条是"按主键/唯一键"的专有语句，对应 UserInfoMapper 接口里的 6 个方法
+
+      updateByUserId：按主键更新（条件 user_id = #{userId}）
+      注意：<set> 里不写 user_id，主键不允许更新
+    -->
+    <update id="updateByUserId" parameterType="com.easychat.entity.po.UserInfo">
+        update user_info
+        <set>
+            <if test="bean.email != null">email = #{bean.email},</if>
+            <if test="bean.nickName != null">nick_name = #{bean.nickName},</if>
+            <if test="bean.joinType != null">join_type = #{bean.joinType},</if>
+            <if test="bean.sex != null">sex = #{bean.sex},</if>
+            <if test="bean.password != null">password = #{bean.password},</if>
+            <if test="bean.personalSignature != null">personal_signature = #{bean.personalSignature},</if>
+            <if test="bean.status != null">status = #{bean.status},</if>
+            <if test="bean.createTime != null">create_time = #{bean.createTime},</if>
+            <if test="bean.lastLoginTime != null">last_login_time = #{bean.lastLoginTime},</if>
+            <if test="bean.areaName != null">area_name = #{bean.areaName},</if>
+            <if test="bean.areaCode != null">area_code = #{bean.areaCode},</if>
+            <if test="bean.lastOffTime != null">last_off_time = #{bean.lastOffTime},</if>
+        </set>
+        where user_id = #{userId}
+    </update>
+
+    <!-- deleteByUserId：按主键删除 -->
+    <delete id="deleteByUserId">
+        delete from user_info where user_id = #{userId}
+    </delete>
+
+    <!-- selectByUserId：按主键查询单条 -->
+    <select id="selectByUserId" resultMap="base_result_map">
+        select
+        <include refid="base_column_list"/>
+        from user_info
+        where user_id = #{userId}
+    </select>
+
+    <!-- updateByEmail：按唯一键 email 更新 -->
+    <update id="updateByEmail" parameterType="com.easychat.entity.po.UserInfo">
+        update user_info
+        <set>
+            <if test="bean.nickName != null">nick_name = #{bean.nickName},</if>
+            <if test="bean.joinType != null">join_type = #{bean.joinType},</if>
+            <if test="bean.sex != null">sex = #{bean.sex},</if>
+            <if test="bean.password != null">password = #{bean.password},</if>
+            <if test="bean.personalSignature != null">personal_signature = #{bean.personalSignature},</if>
+            <if test="bean.status != null">status = #{bean.status},</if>
+            <if test="bean.createTime != null">create_time = #{bean.createTime},</if>
+            <if test="bean.lastLoginTime != null">last_login_time = #{bean.lastLoginTime},</if>
+            <if test="bean.areaName != null">area_name = #{bean.areaName},</if>
+            <if test="bean.areaCode != null">area_code = #{bean.areaCode},</if>
+            <if test="bean.lastOffTime != null">last_off_time = #{bean.lastOffTime},</if>
+        </set>
+        where email = #{email}
+    </update>
+
+    <!-- deleteByEmail：按唯一键 email 删除 -->
+    <delete id="deleteByEmail">
+        delete from user_info where email = #{email}
+    </delete>
+
+    <!-- selectByEmail：按唯一键 email 查询单条 -->
+    <select id="selectByEmail" resultMap="base_result_map">
+        select
+        <include refid="base_column_list"/>
+        from user_info
+        where email = #{email}
+    </select>
+
+</mapper>
